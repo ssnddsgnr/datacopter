@@ -1,0 +1,63 @@
+[package]
+name = "datacopter"
+version = "1.0.0"
+edition = "2021"
+authors = ["Chyngalgan – Solo Architect & Engineer"]
+description = "Autonomous, resource-predictable real-time ETL engine built in Rust"
+
+[dependencies]
+# 1. Базовый асинхронный рантайм и утилиты конкурентности
+tokio = { version = "1.38", features = [
+  "rt-multi-thread",
+  "sync",
+  "time",
+  "macros",
+  "signal",
+] }
+tokio-util = "0.7.11"
+# Для CancellationToken и Graceful Shutdown
+futures-util = { version = "0.3", default-features = false, features = [
+  "alloc",
+] } # Для обработки BoxStream и абстракции потоков
+async-trait = "0.1" # Поддержка динамической диспетчеризации и объектной безопасности трейтов
+
+# 2. Интерфейс управления и разбор ресурсов
+clap = { version = "4.5", features = [
+  "derive",
+  "env",
+] } # Строгий CLI Quality Gate
+
+# 3. Сериализация и Метамодель конфигурации
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"                                 # Парсер pipeline.yaml на холодном старте
+
+# 4. Подсистема энергонезависимого WAL лога
+bincode = "1.3"   # Сверхбыстрая бинарная сериализация Арены и Row метаданных
+crc32fast = "1.4" # SIMD-ускоренная кросс-платформенная валидация Torn Writes
+
+# 5. Инкапсулированные MVP-драйверы баз данных
+# Включаем openssl-vendored фичу для нативной сборки под musl без системных glibc зависимостей
+tokio-postgres = { version = "0.7", features = ["with-chrono-0_4", "runtime"] }
+clickhouse = { version = "0.12.2", features = ["lz4", "uuid"] }
+# RowBinary потоковая сетевая вставка
+
+# 6. Временные типы и логирование (Диагностика)
+chrono = { version = "0.4", features = ["serde"] }
+tracing = "0.1"                                                     # Низколатентная трассировка горячего цикла
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# 7. Заградительный статический аудит компиляции
+static_assertions = "1.1" # Фиксация размера DbValue в 32 байта на этапе компиляции
+
+[dependencies.openssl]
+version = "0.10"
+features = [
+  "vendored",
+] # Принудительная статическая сборка OpenSSL из исходников внутри musl
+
+[profile.release]
+opt-level = 3     # Максимальная оптимизация результирующего машинного кода
+lto = true        # Link-Time Optimization для тотальной зачистки dead code из драйверов
+codegen-units = 1 # Предотвращает разделение кода, максимизируя межмодульный анализ LTO
+panic = "abort"   # Отмена раскрутки стека: мгновенная смерть воркера, защита WAL от порчи
+strip = true      # Полное вырезание отладочной информации и символических таблиц (вес 15-18 МБ)

@@ -1,0 +1,18 @@
+# Спецификация для стандартных CISK-серверов (x86_64)
+[target.x86_64-unknown-linux-musl]
+rustflags = [
+  "-C",
+  "target-feature=+crt-static", # Статическая линковка libc
+  "-C",
+  "link-arg=-static",           # Запрет динамического связывания на уровне системного линкера
+]
+
+# Спецификация для энергоэффективных RISC-серверов (ARM64 / AWS Graviton)
+[target.aarch64-unknown-linux-musl]
+linker = "aarch64-linux-gnu-gcc" # Целевой кросс-линкер Си-зависимостей для CI/CD
+rustflags = [
+  "-C",
+  "target-feature=+crt-static", # Статическая линковка libc под ARM
+  "-C",
+  "link-arg=-static",           # Гарантия автономности "not a dynamic executable" под RISC
+]

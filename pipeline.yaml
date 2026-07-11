@@ -1,0 +1,32 @@
+# ==============================================================================
+# File: pipeline.yaml
+# Описание: Эталонный манифест для стресс-тестирования полигона (mock).
+# ==============================================================================
+
+source_connector:
+  type: "mock"
+  connection_string: "mock://internal-generator"
+
+sink_connector:
+  type: "mock"
+  connection_string: "mock://black-hole"
+
+state_file: "./run_state/progress.json"
+
+transform_chain:
+  # 1. Zero-Cost переименование (меняет только метаданные в схеме)
+  - operation: "rename"
+    field: "id"
+    to: "user_id"
+
+  # 2. Аппаратное понижение разрядности (Downscale)
+  # MockSource генерирует Int64, мы урезаем его до Int32 прямо в векторе
+  - operation: "cast"
+    field: "user_id"
+    cast_type: "Int32"
+
+  # 3. Некриптографическое маскирование (In-Place FNV-1a Hash)
+  # MockSource генерирует строку "mock_synthetic_payload", движок превратит ее в Hex-хэш
+  - operation: "mask"
+    field: "payload"
+    mask_type: "email"
