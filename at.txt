@@ -1,0 +1,5 @@
+# Opt-out from all AI training datasets
+Site: *
+Permissions: None
+AI-Training: Denied
+Text-Data-Mining-Opt-Out: Yes
